@@ -1,0 +1,154 @@
+//@version=6
+indicator("Smart Candles — Behavioral Reconstruction", shorttitle="Smart Candles RE", overlay=true)
+
+// Clean-room behavioral approximation derived from screenshots and public descriptions.
+// This is NOT Trade Whisperer's source code and will not reproduce every proprietary signal.
+
+string GROUP_ENGINE = "Engine"
+string GROUP_CONTEXT = "Market context"
+string GROUP_DISPLAY = "Display"
+
+int fastLen = input.int(9, "Fast EMA", minval=2, group=GROUP_ENGINE)
+int slowLen = input.int(34, "Slow EMA", minval=3, group=GROUP_ENGINE)
+int rsiLen = input.int(14, "RSI length", minval=2, group=GROUP_ENGINE)
+int atrLen = input.int(14, "ATR length", minval=2, group=GROUP_ENGINE)
+int bbLen = input.int(20, "Bollinger length", minval=5, group=GROUP_ENGINE)
+float bbMult = input.float(2.0, "Bollinger deviation", minval=0.1, step=0.1, group=GROUP_ENGINE)
+int adaptLen = input.int(80, "Adaptive lookback", minval=20, group=GROUP_ENGINE)
+int scoreSmooth = input.int(3, "Score smoothing", minval=1, group=GROUP_ENGINE)
+float sensitivity = input.float(0.85, "Entry sensitivity", minval=0.25, maxval=2.5, step=0.05, group=GROUP_ENGINE)
+float minEntry = input.float(0.30, "Minimum entry threshold", minval=0.05, maxval=2.0, step=0.05, group=GROUP_ENGINE)
+float holdRatio = input.float(0.18, "Continuation hold ratio", minval=0.0, maxval=0.8, step=0.02, group=GROUP_ENGINE)
+int trimBars = input.int(4, "Minimum bull run before trim", minval=2, maxval=30, group=GROUP_ENGINE)
+
+bool useBenchmark = input.bool(false, "Use benchmark regime", group=GROUP_CONTEXT)
+string benchmark = input.symbol("AMEX:SPY", "Benchmark", group=GROUP_CONTEXT)
+float benchmarkWeight = input.float(0.10, "Benchmark weight", minval=0.0, maxval=0.30, step=0.01, group=GROUP_CONTEXT)
+
+bool confirmedOnly = input.bool(true, "Colour confirmed bars only", group=GROUP_DISPLAY)
+bool showBands = input.bool(true, "Show Bollinger Bands", group=GROUP_DISPLAY)
+bool showAverages = input.bool(true, "Show moving averages", group=GROUP_DISPLAY)
+bool showSignals = input.bool(false, "Show transition markers", group=GROUP_DISPLAY)
+
+clamp(float value, float lower, float upper) =>
+    math.min(math.max(value, lower), upper)
+
+float atr = math.max(nz(ta.atr(atrLen), syminfo.mintick), syminfo.mintick)
+float emaFast = ta.ema(close, fastLen)
+float emaSlow = ta.ema(close, slowLen)
+float rsi = ta.rsi(close, rsiLen)
+
+float bbBasis = ta.sma(close, bbLen)
+float bbDeviation = ta.stdev(close, bbLen)
+float bbWidth = math.max(bbDeviation * bbMult, syminfo.mintick)
+float bbUpper = bbBasis + bbWidth
+float bbLower = bbBasis - bbWidth
+
+float volumeMean = ta.sma(volume, adaptLen)
+float volumeDeviation = ta.stdev(volume, adaptLen)
+float volumeZ = na(volumeDeviation) or volumeDeviation == 0.0 ? 0.0 : (volume - volumeMean) / volumeDeviation
+float direction = close > close[1] ? 1.0 : close < close[1] ? -1.0 : 0.0
+
+float returnFeature = clamp((close - close[1]) / atr, -3.0, 3.0)
+float trendFeature = clamp((emaFast - emaSlow) / atr, -3.0, 3.0)
+float rsiFeature = clamp((rsi - 50.0) / 25.0, -2.0, 2.0)
+float bandFeature = clamp((close - bbBasis) / bbWidth, -2.0, 2.0)
+float volumeFeature = clamp(volumeZ * direction, -2.0, 2.0)
+
+float benchmarkFeature = request.security(
+     benchmark,
+     timeframe.period,
+     clamp((ta.ema(close, 20) - ta.ema(close, 50)) / math.max(ta.atr(14), syminfo.mintick), -2.0, 2.0),
+     gaps=barmerge.gaps_off,
+     lookahead=barmerge.lookahead_off)
+
+float contextContribution = useBenchmark ? benchmarkWeight * nz(benchmarkFeature) : 0.0
+float ownWeight = 1.0 - (useBenchmark ? benchmarkWeight : 0.0)
+float rawScore = ownWeight * (
+     0.30 * returnFeature +
+     0.27 * trendFeature +
+     0.18 * rsiFeature +
+     0.15 * bandFeature +
+     0.10 * volumeFeature) + contextContribution
+float score = ta.ema(rawScore, scoreSmooth)
+
+float scoreDeviation = nz(ta.stdev(score, adaptLen), minEntry)
+float entryThreshold = math.max(minEntry, sensitivity * scoreDeviation)
+float holdThreshold = entryThreshold * holdRatio
+
+int STATE_NEUTRAL = 0
+int STATE_BULL = 1
+int STATE_BEAR = -1
+var int trendState = STATE_NEUTRAL
+var int runLength = 0
+
+bool barReady = not confirmedOnly or barstate.isconfirmed
+bool bullStart = barReady and score >= entryThreshold and trendState != STATE_BULL
+bool bearStart = barReady and score <= -entryThreshold and trendState != STATE_BEAR
+bool bullCancel = false
+bool bearCancel = false
+bool trimSignal = false
+color candleColor = na
+
+color BLUE = color.rgb(30, 136, 229)
+color GREEN = color.rgb(30, 185, 84)
+color PINK = color.rgb(245, 105, 180)
+color RED = color.rgb(220, 50, 47)
+color DARK_GREEN = color.rgb(17, 92, 65)
+color DARK_RED = color.rgb(120, 36, 48)
+color TRIM = color.rgb(190, 205, 60)
+
+if barReady
+    if bullStart
+        trendState := STATE_BULL
+        runLength := 1
+        candleColor := BLUE
+    else if bearStart
+        trendState := STATE_BEAR
+        runLength := 1
+        candleColor := PINK
+    else if trendState == STATE_BULL
+        runLength += 1
+        bullCancel := score < -holdThreshold
+        trimSignal := runLength >= trimBars and rsi > 65.0 and close > bbBasis + 0.75 * bbWidth and score < score[1]
+        if bullCancel
+            trendState := STATE_NEUTRAL
+            runLength := 0
+            candleColor := DARK_RED
+        else if trimSignal
+            candleColor := TRIM
+        else if score >= holdThreshold
+            candleColor := GREEN
+        else
+            candleColor := DARK_GREEN
+    else if trendState == STATE_BEAR
+        runLength += 1
+        bearCancel := score > holdThreshold
+        if bearCancel
+            trendState := STATE_NEUTRAL
+            runLength := 0
+            candleColor := DARK_GREEN
+        else if score <= -holdThreshold
+            candleColor := RED
+        else
+            candleColor := DARK_RED
+    else
+        runLength := 0
+        candleColor := score >= 0.0 ? DARK_GREEN : DARK_RED
+
+barcolor(candleColor, title="Reconstructed smart-candle state")
+
+fastPlot = plot(showAverages ? emaFast : na, "Fast EMA", color=color.new(color.white, 5), linewidth=1)
+slowPlot = plot(showAverages ? emaSlow : na, "Slow EMA", color=color.new(color.yellow, 10), linewidth=2)
+upperPlot = plot(showBands ? bbUpper : na, "BB upper", color=color.new(color.red, 20))
+basisPlot = plot(showBands ? bbBasis : na, "BB basis", color=color.new(color.gray, 35))
+lowerPlot = plot(showBands ? bbLower : na, "BB lower", color=color.new(color.teal, 20))
+fill(upperPlot, lowerPlot, color=showBands ? color.new(color.silver, 94) : na, title="Bollinger envelope")
+
+plotshape(showSignals and bullStart, title="Bullish transition", style=shape.triangleup, location=location.belowbar, color=BLUE, size=size.tiny, text="B")
+plotshape(showSignals and bearStart, title="Bearish transition", style=shape.triangledown, location=location.abovebar, color=PINK, size=size.tiny, text="P")
+plotshape(showSignals and trimSignal, title="Bullish trim", style=shape.circle, location=location.abovebar, color=TRIM, size=size.tiny, text="T")
+
+alertcondition(bullStart, "Reconstructed bullish transition", "Behavioral reconstruction: potential bullish transition")
+alertcondition(bearStart, "Reconstructed bearish transition", "Behavioral reconstruction: potential bearish transition")
+alertcondition(trimSignal, "Reconstructed trim state", "Behavioral reconstruction: bullish momentum may be stalling")

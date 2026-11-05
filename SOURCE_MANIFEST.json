@@ -1,0 +1,21 @@
+{
+  "exported_at": "2026-11-05T12:03:55Z",
+  "source_home": "<workspace>",
+  "repo": "r2d2-chart-indicator-research",
+  "files": [
+    {
+      "source": "<workspace>/private-source-indicator-analysis/smart_candles_reconstruction.pine",
+      "path": "smart_candles_reconstruction.pine",
+      "source_sha256": "715d5470fdc9a679e7926ab29206e97801b97f857ddfa8065fceb2d1bc83aca6",
+      "export_sha256": "715d5470fdc9a679e7926ab29206e97801b97f857ddfa8065fceb2d1bc83aca6"
+    },
+    {
+      "source": "<workspace>/private-source-indicator-analysis/report.md",
+      "path": "report.md",
+      "source_sha256": "1ad2e45548fe0ba14cf2986b8c1f516b2ec417f474c4c8a4685a816d43a6663b",
+      "export_sha256": "1953673064afb75646646f6a217f8ae492a666968041183554d0d11367c3f6a3"
+    }
+  ],
+  "adaptations": "Toolkit copies may adapt absolute paths or remove optional cross-repo notification dependencies; source and export hashes expose this.",
+  "privacy": "Export sanitized: credentials/private runtime state excluded; personal email, workstation paths and literal IP addresses removed."
+}
