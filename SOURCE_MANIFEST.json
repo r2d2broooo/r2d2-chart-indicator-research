@@ -13,7 +13,7 @@
       "source": "<workspace>/private-source-indicator-analysis/report.md",
       "path": "report.md",
       "source_sha256": "1ad2e45548fe0ba14cf2986b8c1f516b2ec417f474c4c8a4685a816d43a6663b",
-      "export_sha256": "1953673064afb75646646f6a217f8ae492a666968041183554d0d11367c3f6a3"
+      "export_sha256": "07116d09d908094dd86f4f9d0efce4bbd6d901d23c82d20a100f65a14730dcf5"
     }
   ],
   "adaptations": "Toolkit copies may adapt absolute paths or remove optional cross-repo notification dependencies; source and export hashes expose this.",

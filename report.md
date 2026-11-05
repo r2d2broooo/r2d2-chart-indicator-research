@@ -1,7 +1,7 @@
 # Trade Whisperer smart-candle indicator: evidence report
 
 Date: 2026-10-12  
-Source: the 13 JPEG attachments in `<workspace>/Downloads/attachments (3)`  
+Evidence: limited static chart examples and public technical descriptions.
 Scope: static visual analysis plus public descriptions by Trade Whisperer. No private Pine source, compiled indicator, alerts, settings, or live-bar recording was supplied.
 
 ## Bottom line
@@ -22,33 +22,9 @@ The exact formula cannot be recovered from screenshots. The likely design is an 
 
 The companion file `smart_candles_reconstruction.pine` is therefore a **clean-room behavioral approximation**. It is not the author's code and is not expected to reproduce every historical colour.
 
-## Attachment integrity and safety
+## Evidence boundary
 
-- Gmail supplied exactly 13 attachments, all with `.jpg` names.
-- The Downloads copies are byte-for-byte identical to the extracted Gmail bundle.
-- The ZIP contains only those 13 JPEG entries; no executable, script, macro, shortcut, or nested archive was found.
-- ZIP SHA-256: `e1b219be4ba25c43a60de8259b00c23040e3b2528158da6c5293c38f018885dd`
-- Static inspection does not establish that every possible image decoder is vulnerability-free. Open the files with a patched image viewer/browser, as with any untrusted media.
-
-## Attachment inventory
-
-| File | Size | Visible chart | Main evidence |
-|---|---:|---|---|
-| `1000111321.jpg` | 1440×3120 | MU, 5 minute | Blue/pink transition candles, continuation colours, Bollinger envelope, moving averages, volume |
-| `1000111323.jpg` | 1440×3120 | RKLB, daily | Pink near swing highs and blue near swing lows |
-| `1000111325.jpg` | 1440×3120 | CAT, weekly | Alternating bearish and bullish transition states across large swings |
-| `1000111327.jpg` | 1440×3120 | LULU, monthly | Pink near a major top followed by a long red continuation state |
-| `1000111329.jpg` | 1440×3120 | BE, weekly | Blue near lows/pullbacks and pink near highs; dark consolidation colours |
-| `1000111331.jpg` | 1440×3120 | SPCE/SPCX label, daily | Pink at the prior top, blue around the major bottom, then green continuation |
-| `1000111333.jpg` | 1802×1055 | SIVE, weekly | Pink high, blue low, red continuation; also contains Fibonacci drawings |
-| `1000111334.jpg` | 1440×3120 | MU, 5 minute | Repeated pink/blue transitions at intraday swings |
-| `1000111336.jpg` | 1440×3120 | MU, 4 hour | Same state logic on a higher timeframe; background session/regime bands |
-| `1000111338.jpg` | 1440×3120 | NOK, weekly | Pink highs and blue lows across a long sample |
-| `1000111340.jpg` | 1440×3120 | META, 15 minute | Transition colours plus yellow-green trim/stall candles during consolidation |
-| `1000111342.jpg` | 2048×1185 | DELL, weekly | Candle states, Bollinger Bands, moving averages, and visible-range volume profile |
-| `1000111343.jpg` | 1802×1027 | AMD, weekly | Multiple blue transitions and green continuation with the same overlays |
-
-The [full contact sheet](./contact-sheet.jpg) shows all attachments. The [chart-focused contact sheet](./chart-contact-sheet.jpg) removes most phone and social-media chrome.
+The original screenshots, email attachment bundle, file inventory and capture hashes are not distributed. The observations below describe price-chart behavior, not account ownership, private correspondence or investment holdings. Without the source examples, a reader should treat this as an inspectable hypothesis and validate it independently.
 
 ## Direct observations
 
